@@ -17,5 +17,12 @@
   "options_ui": {
     "page": "options/options.html",
     "chrome_style": true
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://leetcode.com/problems/*"],
+      "js": ["content.js"]
+    }
+  ],
+  "permissions": ["storage"]
 }
