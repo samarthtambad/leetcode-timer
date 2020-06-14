@@ -1,41 +1,10 @@
 global.browser = require('webextension-polyfill');
 
 var current;
-var count_timer;
+var timeout;
 var running = false;
-var sound = new Audio('sound.mp3');
-
-var timer = {
-  min: 0,
-  sec: 5,
-  tick: function() {
-    console.log(this.toString());
-    if (this.min == 0) {
-      if (this.sec == 1) {
-        this.sec -= 1;
-        // timer finished, alert the user
-        stopTimer();
-        alert('finish');
-      } else {
-        this.sec -= 1;
-      }
-    } else {
-      if (this.sec == 0) {
-        this.sec = 59;
-        this.min -= 1;
-      } else {
-        this.sec -= 1;
-      }
-    }
-  },
-  toString: function() {
-    var mins = this.min.toString();
-    var secs = this.sec.toString();
-    if (this.min < 10) mins = '0' + mins;
-    if (this.sec < 10) secs = '0' + secs;
-    return mins + ':' + secs;
-  },
-};
+// var sound = new Audio('resources/sound.mp3');
+// sound.play();
 
 const states = {
   READY: 'ready',
@@ -89,22 +58,6 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   if (request.greeting == 'hello') sendResponse({ farewell: 'goodbye' });
 });
 
-function startTimer() {
-  timer.min = 0;
-  timer.sec = 10;
-  updateTimer();
-}
-
-function updateTimer() {
-  timer.tick();
-  console.log(timer.toString());
-  count_timer = setTimeout(updateTimer, 1000); // per 1 sec
-}
-
-function stopTimer() {
-  clearTimeout(count_timer);
-}
-
 function start() {
   chrome.browserAction.setIcon({ path: 'icons/icon_stop_128.png' });
   state = states.RUNNING;
@@ -116,8 +69,19 @@ function stop() {
 }
 
 function iconClick() {
-  alert('click');
-  startTimer();
+  // alert('click');
+  // timer.start();
+  // var task = new TaskTimer("task1", 10, function() {
+  //   alert('done');
+  // }, function() {
+  //   // alert(this.toTimeString());
+  // });
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, { action: 'timer_start' }, function(response) {
+      console.log(response.message);
+    });
+  });
+  // task.start();
   switch (state) {
     case states.BACKGROUND:
       break;
