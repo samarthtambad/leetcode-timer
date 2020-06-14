@@ -1,16 +1,38 @@
 // console.log("content script running")
 // document.body.style.background = "black";
-alert('content script');
+
+console.log(document.readyState);
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', afterDOMLoaded);
+} else {
+  afterDOMLoaded();
+}
+
+document.onreadystatechange = function() {
+  if (document.readyState === 'complete') {
+    var elem = $('<div id="timer-container" style="width: 80px; height: 25px; margin-right: 25px; font-size: large; text-align: center; float:right"></div>');
+    $('#navbar-right-container').prepend(elem);
+
+    // $("#timer-container").text("05:30");
+
+    // var timer = this.getElementById("#timer-container");
+    // timer.textContent = "05:30";
+  }
+};
+
+function afterDOMLoaded() {
+  //Everything that needs to happen after the DOM has initially loaded.
+}
 
 // on current tab, change icon
 // chrome.runtime.sendMessage({action: "stop_icon"})
-chrome.tabs.onActivated.addListener(function(activeInfo) {
-  chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
-    let url = tabs[0].url;
-    // use `url` here inside the callback because it's asynchronous!
-    alert(url);
-  });
-});
+// chrome.tabs.onActivated.addListener(function(activeInfo) {
+//   chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
+//     let url = tabs[0].url;
+//     // use `url` here inside the callback because it's asynchronous!
+//     alert(url);
+//   });
+// });
 
 // on icon click, establish
 
