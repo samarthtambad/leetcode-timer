@@ -1,7 +1,6 @@
 # Leetcode Timer
 
 ![Version](https://img.shields.io/chrome-web-store/v/hihcjkhhlbmckhhnjamfomegbnlffcni)
-
 ![User Count](https://img.shields.io/chrome-web-store/users/hihcjkhhlbmckhhnjamfomegbnlffcni)
 
 **[View on Chrome extension store](https://chrome.google.com/webstore/detail/leetcode-timer/gfkgelnlcnomnahkfmhemgpahgmibofd)**
