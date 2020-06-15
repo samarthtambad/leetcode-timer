@@ -1,6 +1,6 @@
 {
-  "name": "leetcode-timer",
-  "description": "A companion timer application for solving leetcode problems",
+  "name": "Leetcode Timer",
+  "description": "Easily time your leetcode practise sessions with automatic time setting based on difficulty",
   "version": null,
   "manifest_version": 2,
   "icons": {

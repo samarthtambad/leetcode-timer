@@ -1,8 +1,8 @@
 {
   "name": "leetcode-timer",
   "version": "1.0.0",
-  "description": "A companion timer application for solving leetcode problems",
-  "author": "samarthtambad <tambad.samarth@gmail.com>",
+  "description": "Easily time your leetcode practise sessions with automatic time setting based on difficulty",
+  "author": "Samarth Tambad <dev.blazing@gmail.com>",
   "engines": {
     "node": ">=10"
   },
