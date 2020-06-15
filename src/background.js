@@ -9,16 +9,44 @@ var running = false;
 const states = {
   READY: 'ready',
   RUNNING: 'running',
-  BACKGROUND: 'background',
 };
 
-var state = states.BACKGROUND;
+var state = states.READY;
 
-function reset() {
-  current = 25;
-  clearTimeout(count_timer);
-  chrome.browserAction.setBadgeText({ text: '' });
-}
+const timeDefault = {
+  // setting default values
+  easy: '900', // 15 mins
+  medium: '1200', // 20 mins
+  hard: '1800', // 30 mins
+};
+
+var difficultyToTimeMap = {
+  easy: timeDefault.easy,
+  medium: timeDefault.medium,
+  hard: timeDefault.hard,
+};
+
+var getOptionsData = function() {
+  chrome.storage.sync.get(
+    {
+      easy: timeDefault.easy,
+      medium: timeDefault.medium,
+      hard: timeDefault.hard,
+    },
+    function(items) {
+      difficultyToTimeMap.easy = items.easy;
+      difficultyToTimeMap.medium = items.medium;
+      difficultyToTimeMap.hard = items.hard;
+      console.log(items);
+    }
+  );
+};
+getOptionsData();
+
+// update on options changed
+chrome.storage.onChanged.addListener(function(changes, areaName) {
+  getOptionsData();
+});
 
 function popNotification() {
   var message_index = Math.round(Math.random() * (messages.length - 1));
@@ -46,6 +74,7 @@ chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
 
 // Receive messages from content script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
   if (request.action === 'stop_icon') {
     alert('stop icon');
     chrome.browserAction.setIcon({ path: 'icons/icon_stop_128.png' });
@@ -54,37 +83,37 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
       chrome.browserAction.setIcon({ path: 'icons/icon_stop_128.png', tabId: tabId });
     });
   }
-  console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
-  if (request.greeting == 'hello') sendResponse({ farewell: 'goodbye' });
+  if (request.action === 'send_data') {
+    sendResponse({ data: difficultyToTimeMap });
+  }
+  // if (request.greeting == 'hello') sendResponse({ farewell: 'goodbye' });
 });
 
+// start timer
 function start() {
   chrome.browserAction.setIcon({ path: 'icons/icon_stop_128.png' });
-  state = states.RUNNING;
-}
-
-function stop() {
-  chrome.browserAction.setIcon({ path: 'icons/icon_play_128.png' });
-  state = states.STOPPED;
-}
-
-function iconClick() {
-  // alert('click');
-  // timer.start();
-  // var task = new TaskTimer("task1", 10, function() {
-  //   alert('done');
-  // }, function() {
-  //   // alert(this.toTimeString());
-  // });
   chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
     chrome.tabs.sendMessage(tabs[0].id, { action: 'timer_start' }, function(response) {
       console.log(response.message);
     });
   });
-  // task.start();
+  state = states.RUNNING;
+}
+
+// stop timer
+function stop() {
+  chrome.browserAction.setIcon({ path: 'icons/icon_play_128.png' });
+  chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+    chrome.tabs.sendMessage(tabs[0].id, { action: 'timer_stop' }, function(response) {
+      console.log(response.message);
+    });
+  });
+  state = states.READY;
+}
+
+// icon clicked
+chrome.browserAction.onClicked.addListener(function() {
   switch (state) {
-    case states.BACKGROUND:
-      break;
     case states.READY:
       start();
       break;
@@ -92,22 +121,20 @@ function iconClick() {
       stop();
       break;
   }
-}
-
-chrome.browserAction.onClicked.addListener(iconClick);
-chrome.notifications.onClicked.addListener(function(notificationid) {
-  chrome.notifications.clear(notificationid);
 });
+// chrome.notifications.onClicked.addListener(function(notificationid) {
+//   chrome.notifications.clear(notificationid);
+// });
 
-chrome.tabs.onActivated.addListener(function(activeInfo) {
-  alert('onActivated');
-  chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
-    let url = tabs[0].url;
-    // use `url` here inside the callback because it's asynchronous!
-    alert(url);
-  });
-});
+// chrome.tabs.onActivated.addListener(function(activeInfo) {
+//   alert('onActivated');
+//   chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
+//     let url = tabs[0].url;
+//     // use `url` here inside the callback because it's asynchronous!
+//     alert(url);
+//   });
+// });
 
-chrome.tabs.onUpdated.addListener(function(tabID, info, tab) {
-  alert('onUpdated');
-});
+// chrome.tabs.onUpdated.addListener(function(tabID, info, tab) {
+//   alert('onUpdated');
+// });
