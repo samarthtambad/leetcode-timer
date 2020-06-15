@@ -6,11 +6,9 @@ const difficulty = {
   HARD: 'hard',
 };
 
-const timeDefault = {
-  // setting default values
-  easy: '900', // 15 mins
-  medium: '1200', // 20 mins
-  hard: '1800', // 30 mins
+const state = {
+  READY: 'ready',
+  RUNNING: 'running',
 };
 
 var currentTimer;
@@ -18,23 +16,23 @@ var currentStartTime;
 var currentDifficulty;
 var difficultyToTimeMap;
 
-// ------------------- Timer Functionality ---------------------- //
-// https://stackoverflow.com/questions/14147069/countdown-timer-objects-javascript
-
-// I added optional callbacks. This could be setup better, but the details of that are negligible.
-function TaskTimer(name, durationInSeconds, onEnd, onTick) {
+// timer plus state management
+function TaskTimer(name, durationInSeconds, onStart, onStop, onEnd, onTick) {
   var endTime,
-    self = this, // store a reference to this since the context of window.setTimeout is always window
-    running = false;
+    self = this; // store a reference to this since the context of window.setTimeout is always window
+  var currentState = state.READY;
   this.name = name;
+  this.originalDuration = durationInSeconds;
   this.totalSeconds = durationInSeconds;
-  this.accuracy = 5; // ticks per second
-  // this.sound = new Audio('resources/sound.mp3');
+  this.accuracy = 2; // ticks per second
 
   var go = function tick() {
     var now = new Date().getTime();
+    if (currentState != state.RUNNING) {
+      if (typeof onStop === 'function') onStop.call(self);
+      return;
+    }
     if (now >= endTime) {
-      // self.sound.play();
       if (typeof onEnd === 'function') onEnd.call(self);
       return;
     }
@@ -45,11 +43,20 @@ function TaskTimer(name, durationInSeconds, onEnd, onTick) {
 
   // this is an instance method to start the timer
   this.start = function() {
-    if (running) return; // prevent multiple calls to start
-
-    running = true;
+    if (currentState === state.RUNNING) return; // prevent multiple calls to start
+    if (typeof onStart === 'function') onStart.call(self);
+    currentState = state.RUNNING;
     endTime = new Date().getTime() + durationInSeconds * 1000; // this is when the timer should be done (with current functionality. If you want the ability to pause the timer, the logic would need to be updated)
     go();
+  };
+
+  this.stop = function() {
+    this.totalSeconds = this.originalDuration;
+    currentState = state.READY;
+  };
+
+  this.getCurrentState = function() {
+    return currentState;
   };
 
   this.toTimeString = function() {
@@ -61,35 +68,44 @@ function TaskTimer(name, durationInSeconds, onEnd, onTick) {
   };
 }
 
-function onTimerEnd() {
-  alert('done');
+function onTimerStart() {
+  console.log('timer started');
 }
 
-function onTimerTick() {
-  console.log(this.toTimeString());
+function onTimerStop() {
+  console.log('timer stopped');
   $('#timer-container').text(currentTimer.toTimeString());
 }
 
-// ---------------------------------------------------------------- //
+function onTimerEnd() {
+  console.log('timer ended');
+  currentTimer.stop();
+  chrome.runtime.sendMessage({ action: 'finish' });
+  $('#timer-container').text(currentTimer.toTimeString());
+  alert('Time is up!');
+}
+
+function onTimerTick() {
+  // console.log(this.toTimeString());
+  $('#timer-container').text(currentTimer.toTimeString());
+}
 
 function afterDOMContentLoaded() {
   // fetch options data
   chrome.runtime.sendMessage({ action: 'send_data' }, function(response) {
-    console.log('Get options data');
-    console.log(response.data);
     difficultyToTimeMap = response.data;
 
     // fetch current difficulty from page
-    var difficulty = $('div.css-14oi08n')[0].getAttribute('diff');
-    console.log(difficulty);
-    currentDifficulty = 'easy'; // difficulty
+    $('div.css-10o4wqw')[0].setAttribute('id', 'timer-difficulty');
+    var divDifficulty = $('#timer-difficulty').find('div:first-child')[0];
+    var difficulty = divDifficulty.getAttribute('diff');
+    currentDifficulty = difficulty; // difficulty
 
     // get timer value
     currentStartTime = difficultyToTimeMap[currentDifficulty];
-    console.log(currentStartTime);
 
     // create timer
-    currentTimer = new TaskTimer('timer', currentStartTime, onTimerEnd, onTimerTick);
+    currentTimer = new TaskTimer('timer', currentStartTime, onTimerStart, onTimerStop, onTimerEnd, onTimerTick);
 
     // inject timer element into page
     var elem = $('<div id="timer-container" style="width: 80px; height: 25px; margin-right: 25px; font-size: large; text-align: center; float:right"></div>');
@@ -101,21 +117,22 @@ function afterDOMContentLoaded() {
 
 document.onreadystatechange = function() {
   if (document.readyState === 'complete') {
-    setTimeout(afterDOMContentLoaded, 2000);
+    setTimeout(afterDOMContentLoaded, 2500);
   }
 };
 
 // Receive message from background script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
-  if (request.action == 'timer_start') {
+  // console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
+  if (request.action === 'timer_start') {
     sendResponse({ message: 'timer_started' });
-    console.log('timer started');
     currentTimer.start();
   }
-  if (request.action == 'timer_stop') {
+  if (request.action === 'timer_stop') {
     sendResponse({ message: 'timer_stopped' });
-    console.log('timer stopped');
-    // currentTimer.start();
+    currentTimer.stop();
+  }
+  if (request.action === 'send_state') {
+    sendResponse({ message: currentTimer.getCurrentState() });
   }
 });
