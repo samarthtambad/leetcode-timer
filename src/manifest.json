@@ -24,5 +24,5 @@
       "js": ["jquery.js", "content.js"]
     }
   ],
-  "permissions": ["storage"]
+  "permissions": ["storage", "tabs"]
 }
