@@ -50,6 +50,8 @@ chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   // console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
   if (request.action === 'finish') {
     sound.play();
+    chrome.browserAction.setIcon({ path: 'icons/icon_play_128.png' });
+    currentState = state.READY;
   }
   if (request.action === 'send_data') {
     sendResponse({ data: difficultyToTimeMap });
