@@ -1,17 +1,14 @@
 global.browser = require('webextension-polyfill');
 
-var current;
-var timeout;
-var running = false;
-// var sound = new Audio('resources/sound.mp3');
-// sound.play();
+var sound = new Audio('resources/sound.mp3');
 
-const states = {
+const state = {
   READY: 'ready',
   RUNNING: 'running',
 };
 
-var state = states.READY;
+// current state of tab in focus
+var currentState = state.READY;
 
 const timeDefault = {
   // setting default values
@@ -26,6 +23,7 @@ var difficultyToTimeMap = {
   hard: timeDefault.hard,
 };
 
+// get options from storage API
 var getOptionsData = function() {
   chrome.storage.sync.get(
     {
@@ -43,50 +41,20 @@ var getOptionsData = function() {
 };
 getOptionsData();
 
-// update on options changed
+// update state on options changed
 chrome.storage.onChanged.addListener(function(changes, areaName) {
   getOptionsData();
 });
 
-function popNotification() {
-  var message_index = Math.round(Math.random() * (messages.length - 1));
-  var message = '"' + messages[message_index] + '"';
-  chrome.storage.sync.get({ reqClick: 'yes' }, function(items) {
-    chrome.notifications.create({
-      type: 'basic',
-      iconUrl: 'Timer.png',
-      title: chrome.i18n.getMessage('timeUp'),
-      message: message,
-      contextMessage: new Date().toLocaleTimeString(), // in gray text
-      eventTime: Date.now(), // add a event time stamp
-      isClickable: true, // show hand pointer when hover
-      requireInteraction: items.reqClick === 'yes', // if true, do not close until click
-    });
-  });
-}
-
-// Send a request from the extension to a content script
-chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-  chrome.tabs.sendMessage(tabs[0].id, { greeting: 'hello' }, function(response) {
-    console.log(response.farewell);
-  });
-});
-
-// Receive messages from content script
+// receive messages from content script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
   console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
-  if (request.action === 'stop_icon') {
-    alert('stop icon');
-    chrome.browserAction.setIcon({ path: 'icons/icon_stop_128.png' });
-    chrome.tabs.query({ active: true, windowType: 'normal', currentWindow: true }, function(d) {
-      var tabId = d[0].id;
-      chrome.browserAction.setIcon({ path: 'icons/icon_stop_128.png', tabId: tabId });
-    });
+  if (request.action === 'finish') {
+    sound.play();
   }
   if (request.action === 'send_data') {
     sendResponse({ data: difficultyToTimeMap });
   }
-  // if (request.greeting == 'hello') sendResponse({ farewell: 'goodbye' });
 });
 
 // start timer
@@ -97,7 +65,7 @@ function start() {
       console.log(response.message);
     });
   });
-  state = states.RUNNING;
+  currentState = state.RUNNING;
 }
 
 // stop timer
@@ -108,33 +76,45 @@ function stop() {
       console.log(response.message);
     });
   });
-  state = states.READY;
+  currentState = state.READY;
 }
 
-// icon clicked
+// icon clicked, state transitions
 chrome.browserAction.onClicked.addListener(function() {
-  switch (state) {
-    case states.READY:
+  switch (currentState) {
+    case state.READY:
       start();
       break;
-    case states.RUNNING:
+    case state.RUNNING:
       stop();
       break;
   }
 });
-// chrome.notifications.onClicked.addListener(function(notificationid) {
-//   chrome.notifications.clear(notificationid);
-// });
 
-// chrome.tabs.onActivated.addListener(function(activeInfo) {
-//   alert('onActivated');
-//   chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
-//     let url = tabs[0].url;
-//     // use `url` here inside the callback because it's asynchronous!
-//     alert(url);
-//   });
-// });
-
-// chrome.tabs.onUpdated.addListener(function(tabID, info, tab) {
-//   alert('onUpdated');
-// });
+// disable for other pages, icon state change for multiple pages simultaneously
+chrome.tabs.onActivated.addListener(function(activeInfo) {
+  chrome.tabs.query({ active: true, lastFocusedWindow: true }, tabs => {
+    let id = tabs[0].id;
+    let url = tabs[0].url;
+    var pattern = /^(.*)leetcode\.com\/problems\/(.*)$/;
+    if (pattern.test(url)) {
+      chrome.browserAction.enable(id);
+      chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { action: 'send_state' }, function(response) {
+          console.log(response.message);
+          currentState = response.message;
+          switch (currentState) {
+            case state.READY:
+              chrome.browserAction.setIcon({ path: 'icons/icon_play_128.png' });
+              break;
+            case state.RUNNING:
+              chrome.browserAction.setIcon({ path: 'icons/icon_stop_128.png' });
+              break;
+          }
+        });
+      });
+    } else {
+      chrome.browserAction.disable(id);
+    }
+  });
+});
