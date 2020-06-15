@@ -35,7 +35,6 @@ var getOptionsData = function() {
       difficultyToTimeMap.easy = items.easy;
       difficultyToTimeMap.medium = items.medium;
       difficultyToTimeMap.hard = items.hard;
-      console.log(items);
     }
   );
 };
@@ -48,7 +47,7 @@ chrome.storage.onChanged.addListener(function(changes, areaName) {
 
 // receive messages from content script
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
-  console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
+  // console.log(sender.tab ? 'from a content script:' + sender.tab.url : 'from the extension');
   if (request.action === 'finish') {
     sound.play();
   }
