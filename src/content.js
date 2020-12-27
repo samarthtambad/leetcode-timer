@@ -112,6 +112,12 @@ function afterDOMContentLoaded() {
     $('#navbar-right-container').prepend(elem);
 
     $('#timer-container').text(currentTimer.toTimeString());
+
+    // remove feedback anchor element if present
+    var feedbackElem = document.querySelectorAll('.feedback-anchor')[0];
+    if (feedbackElem) {
+      feedbackElem.parentNode.removeChild(feedbackElem);
+    }
   });
 }
 
