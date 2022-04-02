@@ -1,46 +1,70 @@
-# Leetcode Timer
+# Chrome Extension TypeScript Starter
 
-![Version](https://img.shields.io/chrome-web-store/v/hihcjkhhlbmckhhnjamfomegbnlffcni)
-![User Count](https://img.shields.io/chrome-web-store/users/hihcjkhhlbmckhhnjamfomegbnlffcni)
+![build](https://github.com/chibat/chrome-extension-typescript-starter/workflows/build/badge.svg)
 
-**[View on Chrome extension store](https://chrome.google.com/webstore/detail/leetcode-timer/hihcjkhhlbmckhhnjamfomegbnlffcni)**
+Chrome Extension, TypeScript and Visual Studio Code
 
-Simple and easy to use companion timer for leetcode. Easily time your leetcode practise sessions with automatic time setting based on difficulty.
+## Prerequisites
 
-## Features
+* [node + npm](https://nodejs.org/) (Current Version)
 
-1. Set time for difficulty levels
-2. Automatically detects difficulty and sets the time accordingly
-3. Timer embedded inside leetcode page. No need to navigate anywhere
-4. Alert when time over
+## Option
 
-## Usage
+* [Visual Studio Code](https://code.visualstudio.com/)
 
-1. Navigate to options page of extension
-2. Modify default time for Easy, Medium and Hard problems
-3. When on leetcode, click on icon button to start timer based on difficulty
+## Includes the following
 
-## Build Commands
+* TypeScript
+* Webpack
+* React
+* Jest
+* Example Code
+    * Chrome Storage
+    * Options Version 2
+    * content script
+    * count up badge number
+    * background
 
-### `npm run build`
+## Project Structure
 
-Build the extension into `dist` folder for **production**.
+* src/typescript: TypeScript source files
+* src/assets: static files
+* dist: Chrome Extension directory
+* dist/js: Generated JavaScript files
 
-### `npm run build:dev`
+## Setup
 
-Build the extension into `dist` folder for **development**.
+```
+npm install
+```
 
-### `npm run watch`
+## Import as Visual Studio Code project
 
-Watch for modifications then run `npm run build`.
+...
 
-### `npm run watch:dev`
+## Build
 
-Watch for modifications then run `npm run build:dev`.
+```
+npm run build
+```
 
-## Contributing
+## Build in watch mode
 
-If you are interested in contributing, please feel free to fork the repository, make changes and send pull request or add issues or new feature requests.
+### terminal
 
-\
-This extension is built on top of boilerplate code from [vue-web-extension](https://github.com/Kocal/vue-web-extension).
+```
+npm run watch
+```
+
+### Visual Studio Code
+
+Run watch mode.
+
+type `Ctrl + Shift + B`
+
+## Load extension to chrome
+
+Load `dist` directory
+
+## Test
+`npx jest` or `npm run test`
